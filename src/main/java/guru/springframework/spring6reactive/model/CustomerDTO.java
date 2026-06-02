@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * Created by jt, Spring Framework Guru.
  */
@@ -17,7 +20,11 @@ import java.time.LocalDateTime;
 public class CustomerDTO {
 
     private Integer id;
+ 
+    @NotBlank
+    @Size(min = 2, max = 255)
     private String customerName;
+    
     private LocalDateTime createdDate;
     private LocalDateTime lastModifiedDate;
 }
