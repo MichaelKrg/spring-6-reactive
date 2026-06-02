@@ -25,7 +25,7 @@ public class BeerController {
     Mono<ResponseEntity<Void>> createNewBeer(@RequestBody BeerDTO beerDTO){
        return beerService.saveNewBeer(beerDTO)
                .map(savedDto -> ResponseEntity.created(UriComponentsBuilder
-                       .fromHttpUrl("http://localhost:8080/" + BEER_PATH
+                       .fromUriString("http://localhost:8080/" + BEER_PATH
                                + "/" + savedDto.getId())
                        .build().toUri())
                        .build());
