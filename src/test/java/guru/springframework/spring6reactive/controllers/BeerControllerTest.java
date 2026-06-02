@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
@@ -21,7 +21,7 @@ class BeerControllerTest {
     WebTestClient webTestClient;
 
     @Test
-    @Order(999)
+    @Order(999) // Run this test last to avoid deleting data needed for other tests
     void testDeleteBeer() {
         webTestClient.delete()
                 .uri(BeerController.BEER_PATH_ID, 1)
@@ -48,7 +48,7 @@ class BeerControllerTest {
                 .header("Content-Type", "application/json")
                 .exchange()
                 .expectStatus().isCreated()
-                .expectHeader().location("http://localhost:8080/api/v2/beer/4");
+                .expectHeader().location("/api/v2/beer/4");
     }
 
     @Test
