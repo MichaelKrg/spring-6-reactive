@@ -19,6 +19,64 @@ class CustomerControllerTest {
     WebTestClient webTestClient;
 
     @Test
+    void testPatchIdNotFound() {
+        webTestClient.patch()
+                .uri(CustomerController.CUSTOMER_PATH_ID, 999)
+                .bodyValue(CustomerDTO.builder().customerName("Updated Name").build())
+                .header("Content-Type", "application/json")
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testDeleteNotFound() {
+        webTestClient.delete()
+                .uri(CustomerController.CUSTOMER_PATH_ID, 999)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void testUpdateCustomerBadRequest() {
+        CustomerDTO testCustomer = CustomerControllerTest.getCustomerDto();
+        testCustomer.setCustomerName(""); // violate the validation constraint to trigger BadRequest
+        webTestClient.put()
+                .uri(CustomerController.CUSTOMER_PATH_ID, 1)
+                .body(Mono.just(testCustomer), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void testUpdateCustomerNotFound() {
+        webTestClient.put()
+                .uri(CustomerController.CUSTOMER_PATH_ID, 999)
+                .body(Mono.just(getCustomerDto()), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testCreateCustomerBadData() {
+        CustomerDTO testCustomer = getCustomerDto();
+        testCustomer.setCustomerName(""); // violate the validation constraint to trigger BadRequest
+
+        webTestClient.post().uri(CustomerController.CUSTOMER_PATH)
+                .body(Mono.just(testCustomer), CustomerDTO.class)
+                .header("Content-Type", "application/json")
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void testGetByIdNotFound() {
+        webTestClient.get().uri(CustomerController.CUSTOMER_PATH_ID, 999)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
     @Order(999) // Run this test last to avoid deleting data needed for other tests
     void testDeleteCustomer() {
         webTestClient.delete()
@@ -40,7 +98,6 @@ class CustomerControllerTest {
 
     @Test
     void testCreateCustomer() {
-
         webTestClient.post().uri(CustomerController.CUSTOMER_PATH)
                 .body(Mono.just(getCustomerDto()), CustomerDTO.class)
                 .header("Content-Type", "application/json")
