@@ -3,7 +3,6 @@ package guru.springframework.spring6reactive.controllers;
 import guru.springframework.spring6reactive.model.CustomerDTO;
 import guru.springframework.spring6reactive.services.CustomerService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,8 +27,9 @@ public class CustomerController {
     Mono<ResponseEntity<Void>> deleteById(@PathVariable("customerId") Integer customerId){
         return customerService.getCustomerById(customerId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(customerDto -> customerService.deleteCustomerById(customerDto.getId()))
-                .thenReturn(ResponseEntity.noContent().build());
+                .map(customerDTO -> customerService.deleteCustomerById(customerDTO.getId()))
+                .thenReturn(ResponseEntity
+                              .noContent().build());
     }
 
     @PatchMapping(CUSTOMER_PATH_ID)
