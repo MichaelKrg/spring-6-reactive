@@ -1,6 +1,8 @@
 package guru.springframework.spring6reactive.controllers;
 
 import guru.springframework.spring6reactive.model.CustomerDTO;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -8,17 +10,31 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockOAuth2Login;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SpringBootTest
 @AutoConfigureWebTestClient
 class CustomerControllerTest {
-    @Autowired
+    // @Autowired did NOT work correctly here, it never took the security context into account,
+    // so we had to build the WebTestClient manually in the test methods. See setUp() method for details.
     WebTestClient webTestClient;
+    @Autowired
+    ApplicationContext applicationContext;
+
+    @BeforeEach
+    void setUp() {
+        webTestClient = WebTestClient
+                .bindToApplicationContext(applicationContext)
+                .apply(springSecurity())
+                .configureClient()
+                .build();
+    }
 
     @Test
     void testPatchIdNotFound() {
@@ -155,5 +171,12 @@ class CustomerControllerTest {
         return CustomerDTO.builder()
                 .customerName("Test Customer")
                 .build();
+    }
+
+    @Test
+    void testTemp() {
+        System.out.println(webTestClient);
+        System.out.println("Reactive? " + applicationContext.containsBean("webHandler"));
+        System.out.println("MVC? " + applicationContext.containsBean("dispatcherServlet"));
     }
 }

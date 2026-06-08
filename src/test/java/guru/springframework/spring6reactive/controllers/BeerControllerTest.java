@@ -3,25 +3,47 @@ package guru.springframework.spring6reactive.controllers;
 import guru.springframework.spring6reactive.domain.Beer;
 import guru.springframework.spring6reactive.model.BeerDTO;
 import guru.springframework.spring6reactive.repositories.BeerRepositoryTest;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.context.ApplicationContext;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockOAuth2Login;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@SpringBootTest
+@SpringBootTest //(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
+@TestPropertySource(properties = {
+        "logging.level.org.springframework.security=DEBUG"
+})
 class BeerControllerTest {
 
-    @Autowired
+    // Note: @Autowired did NOT work correctly here, it never took the security context into account,
+    // so we had to build the WebTestClient manually in the test methods. See setUp() method for details.
     WebTestClient webTestClient;
+
+    @Autowired
+    ApplicationContext applicationContext;
+
+    @BeforeEach
+    void setUp() {
+        webTestClient = WebTestClient
+                .bindToApplicationContext(applicationContext)
+                .apply(springSecurity())
+                .configureClient()
+                .build();
+    }
 
     @Test
     void testPatchIdNotFound() {
@@ -130,18 +152,36 @@ class BeerControllerTest {
                 .get().uri(BeerController.BEER_PATH_ID, 1)
                 .exchange()
                 .expectStatus().isOk()
-                .expectHeader().valueEquals("Content-type", "application/json")
+                .expectHeader().valueEquals("Content-Type", "application/json")
                 .expectBody(BeerDTO.class);
     }
 
     @Test
     @Order(2)
     void testListBeers() {
-        webTestClient.mutateWith(mockOAuth2Login())
+        webTestClient
+                //.mutateWith(mockJwt())
+                .mutateWith(mockJwt().jwt(jwt -> 
+                    jwt.claim("scope", "message.read")
+                    .claim("scope", "message.write")
+                    .subject("Michael")))
+                //.mutateWith(mockOAuth2Login())
                 .get().uri(BeerController.BEER_PATH)
                 .exchange()
                 .expectStatus().isOk()
-                .expectHeader().valueEquals("Content-type", "application/json")
+                .expectHeader().valueEquals("Content-Type", "application/json")
                 .expectBody().jsonPath("$.size()").isEqualTo(3);
+    }
+
+    @Test
+    void testTemp() {
+        webTestClient
+            //.mutateWith(mockJwt())
+            .mutateWith(mockJwt().jwt(jwt -> jwt.subject("michael")))
+            .get()
+            .uri("/debug")
+            .exchange()
+            .expectBody(String.class)
+            .consumeWith(System.out::println);
     }
 }

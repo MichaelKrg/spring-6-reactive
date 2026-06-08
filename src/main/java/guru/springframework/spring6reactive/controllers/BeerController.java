@@ -5,6 +5,7 @@ import guru.springframework.spring6reactive.services.BeerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -71,4 +72,12 @@ public class BeerController {
         return beerService.listBeers();
     }
 
+    @GetMapping("/debug")
+    public Mono<String> debug(Authentication authentication) {
+        return Mono.just(
+            authentication == null
+                ? "NULL"
+                : authentication.getClass().getName()
+        );
+    }
 }
